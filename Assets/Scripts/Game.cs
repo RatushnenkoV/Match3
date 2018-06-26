@@ -32,6 +32,7 @@ public class Game {
         pause = true;
         elementController.canPlay = false;
         elementController.field.SetElementsBlure(true);
+        elementController.UnhighlightAll();
     }
 
     public void Play()
@@ -39,6 +40,7 @@ public class Game {
         pause = false;
         elementController.canPlay = true;
         elementController.field.SetElementsBlure(false);
+        elementController.MatchAll();
     }
 
     public void Update()
@@ -54,7 +56,7 @@ public class Game {
         }
     }
 
-    public void addScore()
+    public void AddScore()
     {
         score++;
         if (score >= bestScore)

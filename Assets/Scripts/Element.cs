@@ -65,8 +65,7 @@ public class Element : MonoBehaviour {
         transform.position = FieldToScenePos(new Vector2Int(fieldPosition.x, -1));
         SetGoalPosition(FieldToScenePos(fieldPosition));
     }
-
-	// Use this for initialization
+    
 	void Start () {
 		if (!elementController.canPlay)
         {
@@ -86,7 +85,8 @@ public class Element : MonoBehaviour {
         if (highlighted)
         {
             highlightValue += 0.1f;
-            transform.localScale = new Vector3(1 + Mathf.Sin(highlightValue) / 4, 1 + Mathf.Sin(highlightValue) / 4, 1);
+            float scale = 1 + (Selected() ? 1 : 0);
+            transform.localScale = new Vector3(scale + Mathf.Sin(highlightValue) / 4, scale + Mathf.Sin(highlightValue) / 4, 1);
         }
 	}
 
@@ -160,7 +160,7 @@ public class Element : MonoBehaviour {
     }
     #endregion Update
 
-    #region Setter
+    #region Setters
     public void SetFieldPosition(Vector2Int fieldPosition, ActionDelegate DoAfterMove = null)
     {
         this.fieldPosition = fieldPosition;
@@ -186,7 +186,7 @@ public class Element : MonoBehaviour {
         this.goalScales = goalScales;
         this.hasGoalScales = true;
     }
-    #endregion Setter
+    #endregion Setters
 
     #region Static methods
     public static Vector2 FieldToScenePos(Vector2Int fieldPos)
@@ -267,6 +267,11 @@ public class Element : MonoBehaviour {
         SetGoalScales(new Vector3(1, 1, 1));
     }
 
+    public bool Selected()
+    {
+        return selectedElement == this;
+    }
+
     public void Highlight()
     {
         highlighted = true;
@@ -276,7 +281,7 @@ public class Element : MonoBehaviour {
     public void Unhighlight()
     {
         highlighted = false;
-        transform.localScale = new Vector3(1, 1, 1);
+        transform.localScale = new Vector3(1, 1, 1) * (Selected()?1.5f:1);
     }
     #endregion Selection
 

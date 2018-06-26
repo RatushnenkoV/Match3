@@ -76,6 +76,7 @@ public class ElementController {
                 }
             }
         }
+        timeFromLastSwap = 0;
     }
 
     public void Match(Element centerElement)
@@ -96,6 +97,7 @@ public class ElementController {
                     {
                         el.SetBonus(new BombAction());
                     }
+                    game.AddScore();
                 }
                 else
                 {
@@ -160,6 +162,17 @@ public class ElementController {
         }
         CheckMatches();
     }
+
+    public void MatchAll()
+    {
+        for (int i = 0; i < field.Scales.x; i++)
+        {
+            for (int j = 0; j < field.Scales.y; j++)
+            {
+                Match(field.field[i, j]);
+            }
+        }
+    }
     #endregion Field control
 
     #region Element control
@@ -214,7 +227,7 @@ public class ElementController {
     {
         if (game != null)
         {
-            game.addScore();
+            game.AddScore();
         }
         if (field.field[element.fieldPosition.x, element.fieldPosition.y] == element)
         {

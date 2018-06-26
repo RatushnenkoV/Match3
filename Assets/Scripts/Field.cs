@@ -38,65 +38,31 @@ public class Field {
         List<Element> HorizontalMatch = new List<Element>();
 
         ElementType elType = centredElement.elementType;
-        int X = centredElement.fieldPosition.x, Y = centredElement.fieldPosition.y;
-        bool left = true, right = true, up = true, down = true;
-
-        for (int i = 1; i < Mathf.Max(field.GetLength(0), field.GetLength(1)); i++)
+        int x = centredElement.fieldPosition.x, y = centredElement.fieldPosition.y;
+        
+        int koef = 1;
+        for (int k = 0; k < 2; k++)
         {
-            if (left)
+            for (int i = 1; (x + i * koef >= 0 && x + i * koef < Scales.x && field[x + i * koef, y].elementType == elType); i++)
             {
-                if (X - i < 0 || field[X - i, Y] == null || field[X - i, Y].elementType != elType)
-                {
-                    left = false;
-                }
-                else
-                {
-                    HorizontalMatch.Add(field[X - i, Y]);
-                }
+                HorizontalMatch.Add(field[x + i * koef, y]);
             }
-            if (right)
+            koef *= -1;
+        }
+
+        for (int k = 0; k < 2; k++)
+        {
+            for (int i = 1; (y + i * koef >= 0 && y + i * koef < Scales.y && field[x, y + i*koef].elementType == elType); i++)
             {
-                if (X + i >= field.GetLength(0) || field[X + i, Y] == null || field[X + i, Y].elementType != elType)
-                {
-                    right = false;
-                }
-                else
-                {
-                    HorizontalMatch.Add(field[X + i, Y]);
-                }
+                VerticalMatch.Add(field[x, y + i*koef]);
             }
-            if (up)
-            {
-                if (Y - i < 0 || field[X, Y - i] == null || field[X, Y - i].elementType != elType)
-                {
-                    up = false;
-                }
-                else
-                {
-                    VerticalMatch.Add(field[X, Y - i]);
-                }
-            }
-            if (down)
-            {
-                if (Y + i >= field.GetLength(1) || field[X, Y + i] == null || field[X, Y + i].elementType != elType)
-                {
-                    down = false;
-                }
-                else
-                {
-                    VerticalMatch.Add(field[X, Y + i]);
-                }
-            }
-            if (!left && !right && !down && !up)
-            {
-                break;
-            }
+            koef *= -1;
         }
 
         if (HorizontalMatch.Count >= minMatch - 1 && VerticalMatch.Count >= minMatch - 1)
         {
             direction = Direction.Both;
-            HorizontalMatch.Add(field[X, Y]);
+            HorizontalMatch.Add(field[x, y]);
             HorizontalMatch.AddRange(VerticalMatch);
             return HorizontalMatch;
         }
@@ -104,14 +70,14 @@ public class Field {
         if (HorizontalMatch.Count >= minMatch - 1)
         {
             direction = Direction.Horizontal;
-            HorizontalMatch.Add(field[X, Y]);
+            HorizontalMatch.Add(field[x, y]);
             return HorizontalMatch;
         }
 
         if (VerticalMatch.Count >= minMatch - 1)
         {
             direction = Direction.Vertical;
-            VerticalMatch.Add(field[X, Y]);
+            VerticalMatch.Add(field[x, y]);
             return VerticalMatch;
         }
 
@@ -119,43 +85,41 @@ public class Field {
         return null;
     }
 
-    bool SkippedElementInMatch(List<Element> match, ref ElementType elementType, ref Vector2Int position)
+    bool SkippedElementInMatch(List<Element> match, out ElementType elementType, out Vector2Int position)
     {
-        Dictionary<ElementType, int> dict = new Dictionary<ElementType, int>();
+        Dictionary<ElementType, int> appearancesCount = new Dictionary<ElementType, int>();
         foreach (var el in match)
         {
-            if (dict.ContainsKey(el.elementType))
+            if (appearancesCount.ContainsKey(el.elementType))
             {
-                dict[el.elementType]++;
+                appearancesCount[el.elementType]++;
             } else
             {
-                dict.Add(el.elementType, 1);
+                appearancesCount.Add(el.elementType, 1);
             }
         }
 
-        if (dict.Count != 2) return false;
-        
-        foreach (var pair in dict)
+        // Если в словаре только 1 тип - матч собран. Если больше 2х - его нельзя собрать
+        // Если в словаре нет типа, который встречается только 1 раз - матч нельзя собрать
+        elementType = (ElementType)0;
+        position = new Vector2Int();
+        if (appearancesCount.Count != 2 || !appearancesCount.ContainsValue(1)) return false;
+
+        foreach (var pair in appearancesCount)
         {
-            if (pair.Value == 2)
+            if (pair.Value == match.Count-1)
             {
                 elementType = pair.Key;
             }
         }
 
-        foreach (var pair in dict)
+        foreach (var el in match)
         {
-            if (pair.Value == 1)
+            if (el.elementType != elementType)
             {
-                foreach (var el in match)
-                {
-                    if (el.elementType != elementType)
-                    {
-                        position = el.fieldPosition;
-                        break;
-                    }
-                }
-            } 
+                position = el.fieldPosition;
+                break;
+            }
         }
         return true;
     }
@@ -166,15 +130,15 @@ public class Field {
         {
             for (int j = 0; j < Scales.y; j++)
             {
-                ElementType elType = (ElementType)0;
-                Vector2Int position = new Vector2Int(0, 0);
+                ElementType elType;
+                Vector2Int position; 
 
                 if (i+3 < Scales.x)
                 {
                     if (field[i, j] != null && field[i + 1, j] != null && field[i + 2, j] != null)
                     {
                         List<Element> match = new List<Element>() { field[i, j], field[i + 1, j], field[i + 2, j] };
-                        if (SkippedElementInMatch(match, ref elType, ref position))
+                        if (SkippedElementInMatch(match, out elType, out position))
                         {
                             if (position.y - 1 >= 0 && field[position.x, position.y - 1] != null && field[position.x, position.y - 1].elementType == elType) return field[position.x, position.y - 1];
                             if (position.y + 1 < Scales.y && field[position.x, position.y + 1] != null && field[position.x, position.y + 1].elementType == elType) return field[position.x, position.y + 1];
@@ -187,7 +151,7 @@ public class Field {
                     if (field[i, j] != null && field[i, j + 1] != null && field[i, j + 2] != null)
                     {
                         List<Element> match = new List<Element>() { field[i, j], field[i, j + 1], field[i, j + 2] };
-                        if (SkippedElementInMatch(match, ref elType, ref position))
+                        if (SkippedElementInMatch(match, out elType, out position))
                         {
                             if (position.x - 1 >= 0 && field[position.x - 1, position.y] != null && field[position.x - 1, position.y].elementType == elType) return field[position.x - 1, position.y];
                             if (position.x + 1 < Scales.x && field[position.x + 1, position.y] != null && field[position.x + 1, position.y].elementType == elType) return field[position.x + 1, position.y];
@@ -210,6 +174,7 @@ public class Field {
                 if (field[i,j] != null)
                 {
                     MonoBehaviour.Destroy(field[i, j].gameObject);
+                    field[i, j] = null;
                 }
             }
         }
